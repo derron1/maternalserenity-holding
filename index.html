@@ -48,10 +48,16 @@ main{max-width:1120px;width:100%;margin:0 auto;padding:24px 24px 48px;display:gr
 h1{font-family:var(--font-display);font-weight:400;font-size:clamp(42px,6vw,72px);line-height:1.05;letter-spacing:-1px;text-wrap:balance;margin-bottom:24px}
 h1 em{font-style:italic;color:var(--stage-dark)}
 .lede{font-size:18px;color:var(--color-text-warm);max-width:30em;text-wrap:pretty;margin-bottom:36px}
-.cta{display:inline-flex;align-items:center;min-height:48px;padding:0 26px;border-radius:9999px;background:var(--color-primary);color:#fff;font-size:15px;font-weight:600;text-decoration:none;transition:background .2s}
-.cta:hover{background:var(--color-primary-dark);color:#fff}
-.cta:focus-visible{outline:2px solid var(--stage-dark);outline-offset:3px}
-.note{font-size:13px;color:var(--color-text-muted);margin-top:12px}
+form{display:flex;gap:8px;max-width:460px;background:#fff;border:1.5px solid var(--color-border-strong);border-radius:9999px;padding:6px;transition:border-color .2s}
+form:focus-within{border-color:var(--color-primary)}
+input{flex:1;min-width:0;border:none;background:none;font:inherit;font-size:15px;padding:0 16px;color:var(--color-text-primary);outline:none}
+button{height:46px;padding:0 22px;border:none;border-radius:9999px;background:var(--color-primary);color:#fff;font:inherit;font-size:15px;font-weight:600;cursor:pointer;white-space:nowrap;transition:background .2s}
+button:hover{background:var(--color-primary-dark)}
+.note{font-size:13px;color:var(--color-text-muted);margin-top:12px;min-height:1.6em}
+.note.ok{color:var(--stage-dark);font-weight:500}
+.note.err{color:#A4473A}
+button:disabled{opacity:.7;cursor:progress}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
 .urgent{margin-top:40px;padding-top:24px;border-top:1px solid var(--color-border-strong);max-width:460px;font-size:15px;color:var(--color-text-secondary)}
 .urgent strong{display:block;font-family:var(--font-display);font-weight:500;font-size:19px;color:var(--color-text-primary);margin-bottom:4px}
 .breathe__note{font-size:13px;color:var(--color-text-muted)}
@@ -71,13 +77,30 @@ h1 em{font-style:italic;color:var(--stage-dark)}
 <p class="eyebrow">Back very soon</p>
 <h1>We're taking a <em>short pause.</em></h1>
 <p class="lede">The website is offline while we make some improvements. Treatments, bookings and the shop will be available again shortly.</p>
-<a class="cta" href="mailto:hello@maternalserenity.co.uk?subject=Please%20let%20me%20know%20when%20you're%20back">Email me when you're back</a>
-<p class="note">We'll send one email when we're back. Nothing else.</p>
+<form id="notify"><input type="email" name="email" required maxlength="254" autocomplete="email" placeholder="Your email address" aria-label="Email address" aria-describedby="note"><label class="hp" aria-hidden="true">Leave this empty<input type="text" name="website" tabindex="-1" autocomplete="off"></label><button type="submit">Notify me</button></form>
+<p class="note" id="note" aria-live="polite">We'll send one email when we're back, then delete your address.</p>
 <div class="urgent"><strong>Need to reach Fatima?</strong>For existing appointments or urgent questions, email <a href="mailto:hello@maternalserenity.co.uk">hello@maternalserenity.co.uk</a></div>
 </section>
 <div class="breathe" aria-label="Breathing exercise"><div class="portrait"><img class="photo" src="/assets/fatima-cutout.webp" alt="Fatima"><div class="orb"><i class="orb__ring"></i><i class="orb__ring"></i><i class="orb__ring"></i><i class="orb__disc"></i><img class="mark" src="/assets/ms-logo.png" alt="Maternal Serenity"></div></div><div class="breathe__foot"><p class="cue" aria-hidden="true"><span>Breathe in…</span><span>…and breathe out</span></p><p class="breathe__note">While you wait, breathe with the circle.</p></div></div>
 </main>
 <footer class="foot"><span>© 2026 Maternal Serenity</span><span>Reflexology &amp; wellness for every stage</span></footer>
 </div>
+<script>
+// Google Apps Script web app that appends sign-ups to the Sheet (google-apps-script/notify.gs).
+const NOTIFY_ENDPOINT='https://script.google.com/macros/s/AKfycbwlVXhOeH5wfoC1bi3Eps6kyQea9ah-A59AJ5FoqBZXgxQ1qg-la4tAYbDyef-GIwUr/exec';
+const form=document.getElementById('notify'),note=document.getElementById('note'),btn=form.querySelector('button');
+form.addEventListener('submit',async e=>{
+  e.preventDefault();
+  btn.disabled=true;note.classList.remove('ok','err');note.textContent='Sending…';
+  try{
+    const r=await fetch(NOTIFY_ENDPOINT,{method:'POST',body:new URLSearchParams(new FormData(form))});
+    const d=await r.json();
+    if(!d.ok)throw new Error(d.error||'failed');
+    note.textContent="Thank you. We'll let you know as soon as we're back.";note.classList.add('ok');form.reset();
+  }catch(err){
+    note.innerHTML='Sorry, that didn\'t go through. Please email <a href="mailto:hello@maternalserenity.co.uk?subject=Please%20let%20me%20know%20when%20you\'re%20back">hello@maternalserenity.co.uk</a> instead.';note.classList.add('err');
+  }finally{btn.disabled=false}
+});
+</script>
 </body>
 </html>
